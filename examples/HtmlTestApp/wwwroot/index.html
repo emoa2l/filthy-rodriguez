@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Payment Test - Credit Card Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .product-info {
+            background: #f7f9fc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .product-info h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .product-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="email"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #card-element {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        #card-errors {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 8px;
+            min-height: 20px;
+        }
+
+        .payment-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .payment-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .payment-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .payment-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .test-cards {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .test-cards strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #856404;
+        }
+
+        .test-cards code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .quick-test {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .quick-test strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #004085;
+        }
+
+        .quick-test-button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .quick-test-button:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        .quick-test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💳 Stripe Payment Test</h1>
+        <p class="subtitle">Complete payment flow demonstration with redirect and confirmation</p>
+
+        <div class="product-info">
+            <h2>Order Summary</h2>
+            <div class="product-item">
+                <span>Premium Widget</span>
+                <span>$15.00</span>
+            </div>
+            <div class="product-item">
+                <span>Shipping</span>
+                <span>$5.00</span>
+            </div>
+            <div class="product-total">
+                <span>Total</span>
+                <span>$20.00</span>
+            </div>
+        </div>
+
+        <form id="payment-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="customer@example.com" value="test@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="card-element">Card Information</label>
+                <div id="card-element"></div>
+                <div id="card-errors" role="alert"></div>
+            </div>
+
+            <button type="submit" class="payment-button" id="submit-button" disabled>
+                Pay $20.00
+            </button>
+        </form>
+
+        <div class="quick-test">
+            <strong>🚀 Quick Test (No Card Entry Required)</strong>
+            <button type="button" class="quick-test-button" id="quick-test-button">
+                Test with Visa (Auto-Success)
+            </button>
+            <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                This will create a payment and immediately confirm it with a test card token (pm_card_visa).
+                Perfect for testing the redirect flow!
+            </p>
+        </div>
+
+        <div style="margin-top: 15px; text-align: center;">
+            <a href="/refund.html" style="color: #dc3545; text-decoration: none; font-weight: 600; font-size: 14px;">
+                🔄 Process a Refund
+            </a>
+        </div>
+
+        <div class="test-cards">
+            <strong>🧪 Test Card Numbers (for manual testing):</strong>
+            Success: <code>4242 4242 4242 4242</code><br>
+            Declined: <code>4000 0000 0000 0002</code><br>
+            3D Secure: <code>4000 0025 0000 3155</code><br>
+            Use any future expiry date and any 3-digit CVC.
+        </div>
+
+        <div id="status-message" class="status-message"></div>
+    </div>
+
+    <script>
+        // API endpoint configuration
+        const API_BASE = window.location.origin + '/api/stripe';
+        
+        let currentPaymentIntentId = null;
+        let ws = null;
+
+        // Initialize - Card element is disabled for simplicity in this test app
+        // In a real app, you would initialize Stripe.js with your publishable key
+        document.getElementById('card-element').innerHTML = 
+            '<div style="padding: 10px; background: #f8f9fa; color: #666; border-radius: 4px; text-align: center;">' +
+            '📝 Manual card entry disabled in this test app<br>' +
+            '<small>Use the "Quick Test" button below to test the complete flow</small>' +
+            '</div>';
+
+        // Create payment intent
+        async function createPaymentIntent() {
+            const response = await fetch(`${API_BASE}/payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: 2000, // $20.00 in cents
+                    currency: 'usd',
+                    description: 'Test Order - Premium Widget + Shipping',
+                    metadata: {
+                        product: 'Premium Widget',
+                        customer_email: document.getElementById('email').value
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to create payment intent');
+            }
+
+            return await response.json();
+        }
+
+        // Confirm payment with test card
+        async function confirmPayment(paymentIntentId) {
+            const response = await fetch(`${API_BASE}/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    paymentIntentId: paymentIntentId,
+                    paymentMethodId: 'pm_card_visa' // Stripe test card token
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Payment confirmation failed');
+            }
+
+            return await response.json();
+        }
+
+        // Connect to WebSocket for real-time updates
+        function connectWebSocket(paymentIntentId) {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/stripe/ws`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                ws.send(JSON.stringify({
+                    action: 'subscribe',
+                    paymentId: paymentIntentId
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket message:', data);
+
+                if (data.type === 'payment_update') {
+                    const status = data.data.status;
+                    console.log('Payment status update:', status);
+                    
+                    if (status === 'succeeded') {
+                        showStatus('Payment successful! Redirecting...', 'success');
+                        // Redirect to success page
+                        setTimeout(() => {
+                            window.location.href = `/success.html?payment_intent=${paymentIntentId}`;
+                        }, 1000);
+                    } else if (status === 'canceled' || status === 'failed') {
+                        showStatus('Payment failed! Redirecting...', 'error');
+                        // Redirect to cancel page
+                        setTimeout(() => {
+                            window.location.href = `/cancel.html?payment_intent=${paymentIntentId}`;
+                        }, 1000);
+                    }
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+            };
+        }
+
+        // Quick test function
+        async function runQuickTest() {
+            const submitButton = document.getElementById('submit-button');
+            const quickTestButton = document.getElementById('quick-test-button');
+            
+            try {
+                submitButton.disabled = true;
+                quickTestButton.disabled = true;
+                quickTestButton.innerHTML = '<span class="spinner"></span>Processing...';
+                
+                showStatus('Creating payment intent...', 'info');
+                
+                // Create payment intent
+                const paymentIntent = await createPaymentIntent();
+                currentPaymentIntentId = paymentIntent.id;
+                console.log('Payment intent created:', paymentIntent);
+                
+                showStatus('Connecting to real-time updates...', 'info');
+                
+                // Connect WebSocket for real-time updates
+                connectWebSocket(paymentIntent.id);
+                
+                // Wait a moment for WebSocket to connect
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                showStatus('Confirming payment with test card...', 'info');
+                
+                // Confirm payment with test card
+                const result = await confirmPayment(paymentIntent.id);
+                console.log('Payment confirmed:', result);
+                
+                // WebSocket will handle the redirect when status update comes through
+                // But if WebSocket fails, we can fall back to manual redirect
+                if (result.status === 'succeeded') {
+                    showStatus('Payment successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/success.html?payment_intent=${paymentIntent.id}`;
+                    }, 2000);
+                } else if (result.status === 'requires_action') {
+                    showStatus('Payment requires additional authentication...', 'info');
+                } else {
+                    showStatus('Payment status: ' + result.status, 'info');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('Error: ' + error.message, 'error');
+                submitButton.disabled = false;
+                quickTestButton.disabled = false;
+                quickTestButton.textContent = 'Test with Visa (Auto-Success)';
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showStatus('Please use the "Quick Test" button to simulate a payment in this demo.', 'info');
+        });
+
+        // Quick test button handler
+        document.getElementById('quick-test-button').addEventListener('click', runQuickTest);
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+        }
+
+        // Hide status message
+        function hideStatus() {
+            const statusEl = document.getElementById('status-message');
+            statusEl.style.display = 'none';
+        }
+
+        // Cleanup WebSocket on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>

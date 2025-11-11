@@ -1,0 +1,85 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "public_release" ]
+  pull_request:
+    branches: [ "public_release" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore FilthyRodriguez.sln
+
+    - name: Build
+      run: dotnet build FilthyRodriguez.sln --configuration ${{ matrix.configuration }} --no-restore
+
+    - name: Test
+      run: dotnet test FilthyRodriguez.sln --configuration ${{ matrix.configuration }} --no-build --verbosity normal
+
+    - name: Build examples
+      run: |
+        dotnet build examples/HtmlTestApp/HtmlTestApp.csproj --configuration ${{ matrix.configuration }} --no-restore
+        dotnet build tools/ApiTester/ApiTester.csproj --configuration ${{ matrix.configuration }} --no-restore
+        dotnet build tools/WebhookTestSubscriber/WebhookTestSubscriber.csproj --configuration ${{ matrix.configuration }} --no-restore
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Run security scan
+      uses: securego/gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out results.sarif ./...'
+      continue-on-error: true
+
+    - name: Check for secrets
+      run: |
+        if grep -r "sk_test_51SPrGC" . --include="*.json" --include="*.cs" 2>/dev/null; then
+          echo "::error::Found real API keys in code!"
+          exit 1
+        fi
+        if grep -r "sk_live_" . --include="*.json" --include="*.cs" 2>/dev/null; then
+          echo "::error::Found production API keys in code!"
+          exit 1
+        fi
+        echo "No secrets found ✓"
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore FilthyRodriguez.sln
+
+    - name: Check code formatting
+      run: dotnet format FilthyRodriguez.sln --verify-no-changes --verbosity diagnostic
+
+    - name: Run code analysis
+      run: dotnet build FilthyRodriguez.sln --configuration Release /p:TreatWarningsAsErrors=true

@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>FilthyRodriguez.Stripe.Payments</PackageId>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <PackageVersion>1.0.1</PackageVersion>
+    <Authors>Eric Martin</Authors>
+    <Company>Bon Temps Bon Plats</Company>
+    <Product>FilthyRodriguez</Product>
+    <Description>A drop-in, framework-agnostic Stripe payment plugin for .NET 8 with events, metrics, and multi-database support</Description>
+    <PackageTags>stripe;payment;webhook;refund;events;metrics;database;postgresql;mysql;sqlserver;sqlite;payment-processing;payment-gateway;ecommerce;dotnet;aspnetcore</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/emoa2l/filthy-rodriguez</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/emoa2l/filthy-rodriguez</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReleaseNotes>
+      v1.0.1 - Metrics Emission + NuGet
+      - Add metrics emission system with IPaymentMetrics and IMetricsSink
+      - Automatic event-driven metrics via MetricsEventListener
+      - LoggingMetricsSink for console output
+      - Track payments, refunds, database operations
+      - Pluggable metrics backends (DataDog, Prometheus, etc.)
+      - NuGet package configuration
+    </PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Stripe.net" Version="49.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
